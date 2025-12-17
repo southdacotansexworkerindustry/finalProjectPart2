@@ -117,9 +117,8 @@ public class PartBDriver {
             rounds++;
 
             computePayoffs(agents, b);
+            changed = agenticImitation(agents, m) || changed;
             changed = eliminateAgents(agents, T, isK) || changed;
-
-            // imitation step intentionally omitted / TODO
         }
 
         return rounds;
@@ -129,22 +128,22 @@ public class PartBDriver {
        PAYOFF & ELIMINATION
        ======================= */
     private static void computePayoffs(ArrayList<Agent> agents, double b) {
-    for (Agent a : agents) {
-        if (!a.isAlive) continue;
+        for (Agent a : agents) {
+            if (!a.isAlive) continue;
 
-        a.R = 0.0;   // ← reset Big R each round
+            a.R = 0.0;   // ← reset Big R each round
 
-        for (Agent n : a.neighbors) {
-            if (!n.isAlive) continue;
+            for (Agent n : a.neighbors) {
+                if (!n.isAlive) continue;
 
-            if (a.isCooperator && n.isCooperator) {
-                a.R += 1.0;
-            } else if (!a.isCooperator && n.isCooperator) {
-                a.R += b;
+                if (a.isCooperator && n.isCooperator) {
+                    a.R += 1.0;
+                } else if (!a.isCooperator && n.isCooperator) {
+                    a.R += b;
+                }
             }
         }
     }
-}
 
     
 
@@ -174,34 +173,40 @@ public class PartBDriver {
 
         return changed;
     }
-    
-    private static void agenticImitation(){
-        
+
+    private static boolean agenticImitation(ArrayList<Agent> agents, double m) {
+        boolean changed = false;
+        Random rand = new Random();
+        HashMap<Agent, Boolean> strategyUpdates = new HashMap<>();
+
+        for (Agent a : agents) {
+            if (!a.isAlive) continue;
+
+            List<Agent> betterNeighbors = new ArrayList<>();
+            for (Agent neighbor : a.neighbors) {
+                if (!neighbor.isAlive) continue;
+                if (neighbor.R > a.R) {
+                    betterNeighbors.add(neighbor);
+                }
+            }
+
+            if (!betterNeighbors.isEmpty() && rand.nextDouble() < m) {
+                Agent chosenNeighbor = betterNeighbors.get(rand.nextInt(betterNeighbors.size()));
+                strategyUpdates.put(a, chosenNeighbor.isCooperator);
+            }
+        }
+
+        for (Map.Entry<Agent, Boolean> entry : strategyUpdates.entrySet()) {
+            Agent agent = entry.getKey();
+            boolean newStrategy = entry.getValue();
+            if (agent.isCooperator != newStrategy) {
+                agent.isCooperator = newStrategy;
+                changed = true;
+            }
+        }
+
+        return changed;
     }
-    
-    // C. TODO: Imitation step based on m
-            // For each alive agent:
-            //   - look at neighbors with higher r
-            //   - with probability m, copy that neighbor's strategy (isCooperator)
-            // This should be done using a temporary structure so all updates
-            // happen simultaneously after checking everyone.
-    
-            // Variable definition: 
-            // Notes: m - possibility
-            // p - Probability of an edge between any two agents in a random network.
-            // m - Probability that an agent imitates a neighbor’s strategy after a round.
-            // k - initial number of neighbors.
-            /* rᵢ - The payoff agent i gets from a single interaction with one neighbor. 
-            Determined by: 
-            -agent i’s strategy 
-            -neighbor’s strategy 
-            -payoff parameter b 
-            -agent i’s initial degree kᵢ*/
-    
-            // NOTE: I left this unimplemented so we can finalize the exact
-            // imitation rule and ordering (imitate before/after elimination)
-            // to match Eliott's spec.
-            // TODO: per-round logging of percent eliminated (if required by assignment)
 
     /* =======================
        OUTPUT
