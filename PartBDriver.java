@@ -182,17 +182,20 @@ public class PartBDriver {
         for (Agent a : agents) {
             if (!a.isAlive) continue;
 
-            List<Agent> betterNeighbors = new ArrayList<>();
+            double bestPayoff = a.R;
+            Agent bestNeighbor = null;
+
             for (Agent neighbor : a.neighbors) {
                 if (!neighbor.isAlive) continue;
-                if (neighbor.R > a.R) {
-                    betterNeighbors.add(neighbor);
+
+                if (neighbor.R > bestPayoff) {
+                    bestPayoff = neighbor.R;
+                    bestNeighbor = neighbor;
                 }
             }
 
-            if (!betterNeighbors.isEmpty() && rand.nextDouble() < m) {
-                Agent chosenNeighbor = betterNeighbors.get(rand.nextInt(betterNeighbors.size()));
-                strategyUpdates.put(a, chosenNeighbor.isCooperator);
+            if (bestNeighbor != null && rand.nextDouble() < m) {
+                strategyUpdates.put(a, bestNeighbor.isCooperator);
             }
         }
 
